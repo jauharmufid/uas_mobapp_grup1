@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uas_mobapp_grup1/firebase_auth.dart';
 import 'package:uas_mobapp_grup1/forgotpass.dart';
 import 'package:uas_mobapp_grup1/signup.dart';
@@ -26,11 +27,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: FutureBuilder(
+        future: SharedPreferences.getInstance(),
+        builder: (context, AsyncSnapshot<SharedPreferences> snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // Jika sudah mendapatkan instance SharedPreferences
+            return snapshot.data!.getBool('isLoggedIn') == true
+                ? HalamanUtama()
+                : LoginPage();
+          } else {
+            return CircularProgressIndicator();
+          }
+        },
+      ),
     );
   }
 }
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -51,6 +64,9 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     // Login successful, navigate to main page
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setBool('isLoggedIn', true);
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => HalamanUtama()),
@@ -139,6 +155,8 @@ class _LoginPageState extends State<LoginPage> {
                       try {
                         final result = await AuthService().signInWithGoogle();
                         if (result !=null){
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          prefs.setBool('isLoggedIn', true);
                           Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => HalamanUtama()),
